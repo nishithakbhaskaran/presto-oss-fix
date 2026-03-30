@@ -17,8 +17,6 @@ import com.facebook.drift.annotations.ThriftConstructor;
 import com.facebook.drift.annotations.ThriftField;
 import com.facebook.drift.annotations.ThriftStruct;
 import com.facebook.presto.spi.resourceGroups.ResourceGroupId;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Optional;
 
@@ -37,14 +35,7 @@ public class ResourceGroupRuntimeInfo
     private final Optional<ResourceGroupSpecInfo> resourceGroupConfigSpec;
 
     @ThriftConstructor
-    @JsonCreator
-    public ResourceGroupRuntimeInfo(@JsonProperty("resourceGroupId") ResourceGroupId resourceGroupId,
-                                    @JsonProperty("memoryUsageBytes") long memoryUsageBytes,
-                                    @JsonProperty("queuedQueries") int queuedQueries,
-                                    @JsonProperty("descendantQueuedQueries") int descendantQueuedQueries,
-                                    @JsonProperty("runningQueries") int runningQueries,
-                                    @JsonProperty("descendantRunningQueries") int descendantRunningQueries,
-                                    @JsonProperty("resourceGroupConfigSpec") Optional<ResourceGroupSpecInfo> resourceGroupConfigSpec)
+    public ResourceGroupRuntimeInfo(ResourceGroupId resourceGroupId, long memoryUsageBytes, int queuedQueries, int descendantQueuedQueries, int runningQueries, int descendantRunningQueries, Optional<ResourceGroupSpecInfo> resourceGroupConfigSpec)
     {
         this.resourceGroupId = requireNonNull(resourceGroupId, "resourceGroupId is null");
         this.memoryUsageBytes = memoryUsageBytes;
@@ -61,49 +52,42 @@ public class ResourceGroupRuntimeInfo
     }
 
     @ThriftField(1)
-    @JsonProperty
     public ResourceGroupId getResourceGroupId()
     {
         return resourceGroupId;
     }
 
     @ThriftField(2)
-    @JsonProperty
     public long getMemoryUsageBytes()
     {
         return memoryUsageBytes;
     }
 
     @ThriftField(3)
-    @JsonProperty
     public int getQueuedQueries()
     {
         return queuedQueries;
     }
 
     @ThriftField(4)
-    @JsonProperty
     public int getDescendantQueuedQueries()
     {
         return descendantQueuedQueries;
     }
 
     @ThriftField(5)
-    @JsonProperty
     public int getRunningQueries()
     {
         return runningQueries;
     }
 
     @ThriftField(6)
-    @JsonProperty
     public int getDescendantRunningQueries()
     {
         return descendantRunningQueries;
     }
 
     @ThriftField(7)
-    @JsonProperty
     public Optional<ResourceGroupSpecInfo> getResourceGroupConfigSpec()
     {
         return resourceGroupConfigSpec;

@@ -50,7 +50,7 @@ public class TestResourceManagerConfig
                 .setResourceGroupRuntimeHeartbeatInterval(new Duration(1, SECONDS))
                 .setRunningTaskCountFetchInterval(new Duration(1, SECONDS))
                 .setResourceGroupRuntimeInfoTimeout(new Duration(30, SECONDS))
-                .setHttpServerEnabled(false));
+                .setHeartbeatHttpEnabled(false));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class TestResourceManagerConfig
                 .put("resource-manager.resource-group-runtimeinfo-heartbeat-interval", "6m")
                 .put("resource-manager.running-task-count-fetch-interval", "1m")
                 .put("resource-manager.resource-group-runtimeinfo-timeout", "4s")
-                .put("resource-manager.http-server-enabled", "true")
+                .put("resource-manager.heartbeat-http-enabled", "true")
                 .build();
 
         ResourceManagerConfig expected = new ResourceManagerConfig()
@@ -97,7 +97,7 @@ public class TestResourceManagerConfig
                 .setResourceGroupRuntimeHeartbeatInterval(new Duration(6, MINUTES))
                 .setResourceGroupRuntimeInfoTimeout(new Duration(4, SECONDS))
                 .setRunningTaskCountFetchInterval(new Duration(1, MINUTES))
-                .setHttpServerEnabled(true);
+                .setHeartbeatHttpEnabled(true);
 
         assertFullMapping(properties, expected);
     }
