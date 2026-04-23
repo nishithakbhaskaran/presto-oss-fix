@@ -4,6 +4,7 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
+
 updates:
   - package-ecosystem: "npm"
     directory: "/presto-ui/src"
@@ -14,3 +15,10 @@ updates:
       - dependency-type: "all"
     labels:
       - "dependencies"
+    registries:
+      - npmjs
+      
+registries:
+  npmjs:
+    type: npm-registry
+    url: https://registry.npmjs.org
