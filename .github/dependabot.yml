@@ -21,10 +21,3 @@ updates:
       - dependency-name: "styled-components"
     labels:
       - "dependencies"
-    registries:
-      - npmjs
-      
-registries:
-  npmjs:
-    type: npm-registry
-    url: https://registry.npmjs.org
