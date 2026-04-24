@@ -10,9 +10,15 @@ updates:
     directory: "/presto-ui/src"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     allow:
-      - dependency-type: "all"
+      - dependency-name: "react-data-table-component"
+      - dependency-name: "ts-jest"
+      - dependency-name: "@babel/core"
+      - dependency-name: "react-dom"
+      - dependency-name: "react"
+      - dependency-name: "css-loader"
+      - dependency-name: "styled-components"
     labels:
       - "dependencies"
     registries:
