@@ -43,9 +43,17 @@ public class BlackHoleConnectorFactory
     @Override
     public Connector create(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
     {
+        BlackHoleConfig config = new BlackHoleConfig();
+
+        // Parse case-sensitive-name-matching property if present
+        String caseSensitiveValue = requiredConfig.get("case-sensitive-name-matching");
+        if (caseSensitiveValue != null) {
+            config.setCaseSensitiveNameMatching(Boolean.parseBoolean(caseSensitiveValue));
+        }
+
         ListeningScheduledExecutorService executorService = listeningDecorator(newSingleThreadScheduledExecutor(daemonThreadsNamed("blackhole")));
         return new BlackHoleConnector(
-                new BlackHoleMetadata(),
+                new BlackHoleMetadata(config),
                 new BlackHoleSplitManager(),
                 new BlackHolePageSourceProvider(executorService),
                 new BlackHolePageSinkProvider(executorService),

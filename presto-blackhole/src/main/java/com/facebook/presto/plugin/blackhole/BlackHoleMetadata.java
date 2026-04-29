@@ -56,6 +56,7 @@ import static com.facebook.presto.spi.StandardErrorCode.ALREADY_EXISTS;
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.lang.String.format;
+import static java.util.Locale.ROOT;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -67,9 +68,11 @@ public class BlackHoleMetadata
 
     private final List<String> schemas = new ArrayList<>();
     private final Map<SchemaTableName, BlackHoleTableHandle> tables = new ConcurrentHashMap<>();
+    private final BlackHoleConfig config;
 
-    public BlackHoleMetadata()
+    public BlackHoleMetadata(BlackHoleConfig config)
     {
+        this.config = config;
         schemas.add(SCHEMA_NAME);
     }
 
@@ -285,5 +288,11 @@ public class BlackHoleMetadata
         if (!schemas.contains(schemaName)) {
             throw new SchemaNotFoundException(schemaName);
         }
+    }
+
+    @Override
+    public String normalizeIdentifier(ConnectorSession session, String identifier)
+    {
+        return config.isCaseSensitiveNameMatching() ? identifier : identifier.toLowerCase(ROOT);
     }
 }

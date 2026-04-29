@@ -34,7 +34,7 @@ import static org.testng.Assert.fail;
 
 public class TestBlackHoleMetadata
 {
-    private final BlackHoleMetadata metadata = new BlackHoleMetadata();
+    private final BlackHoleMetadata metadata = new BlackHoleMetadata(new BlackHoleConfig());
     private final Map<String, Object> tableProperties = ImmutableMap.of(
             BlackHoleConnector.SPLIT_COUNT_PROPERTY, 0,
             BlackHoleConnector.PAGES_PER_SPLIT_PROPERTY, 0,
