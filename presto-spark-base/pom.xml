@@ -31,12 +31,12 @@
             <dependency>
                 <groupId>com.facebook.airlift</groupId>
                 <artifactId>event</artifactId>
-                <version>0.216</version>
+                <version>0.228</version>
             </dependency>
             <dependency>
                 <groupId>com.facebook.airlift</groupId>
                 <artifactId>discovery</artifactId>
-                <version>0.216</version>
+                <version>0.228</version>
             </dependency>
             <dependency>
                 <groupId>com.facebook.drift</groupId>
