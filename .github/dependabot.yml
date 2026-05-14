@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  # Maven / Java JAR dependencies
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+    open-pull-requests-limit: 10
+
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+    labels:
+      - "dependencies"
+      - "java"
+      - "security"
+
+    rebase-strategy: "auto"
+
+  # npm / Node.js dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+    open-pull-requests-limit: 10
+
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+    labels:
+      - "dependencies"
+      - "npm"
+      - "security"
+
+    rebase-strategy: "auto"
