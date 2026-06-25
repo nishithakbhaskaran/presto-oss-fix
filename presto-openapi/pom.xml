@@ -23,7 +23,7 @@
                     <groupId>org.openapitools</groupId>
                     <artifactId>openapi-generator-maven-plugin</artifactId>
                     <!-- last version with Java 8 support -->
-                    <version>6.6.0</version>
+                    <version>7.22.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
