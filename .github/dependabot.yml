@@ -1,0 +1,10 @@
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/presto-ui/src"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"

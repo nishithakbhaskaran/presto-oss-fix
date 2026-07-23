@@ -6554,12 +6554,10 @@ raw-body@~2.5.3:
     iconv-lite "~0.4.24"
     unpipe "~1.0.0"
 
-react-data-table-component@^7.7.1:
-  version "7.7.1"
-  resolved "https://registry.yarnpkg.com/react-data-table-component/-/react-data-table-component-7.7.1.tgz#103ede17c515f114a36c4054a4d1e8636fc28917"
-  integrity sha512-F1qciUONe0EiItxd+LZg9K7UXxvilSQH8WvUoSnPnAVZ/PK2x4Djr3nzkuCqCIfiMuU3imI+8gI7nYRIW2Kfxw==
-  dependencies:
-    deepmerge "^4.3.1"
+react-data-table-component@^8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/react-data-table-component/-/react-data-table-component-8.3.0.tgz#4b635e4289a91beca74ed60d2074edb6e42342c2"
+  integrity sha512-E4AkM067KzlV9tdZBzMI1BrnbwqOI8ZhPdtJea73XZ3vXCAYwKJLRDfTwI2Xe2+DiwznsOhNhD2AxO5K7CdX6Q==
 
 react-dom@19.2.4:
   version "19.2.4"
