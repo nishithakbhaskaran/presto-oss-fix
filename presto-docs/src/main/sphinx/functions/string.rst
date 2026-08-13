@@ -256,6 +256,45 @@ For plugin-loaded string functions, see :ref:`functions/plugin-loaded-functions:
         SELECT trim('test', 't'); -- es
         SELECT trim('.t.e.s.t.', '.t'); -- e.s
 
+.. function:: trim([ [ specification ] [ chars ] FROM ] string) -> varchar
+    :noindex:
+
+    ANSI SQL syntax for the trim functions. ``specification`` is one of ``BOTH``,
+    ``LEADING``, or ``TRAILING``, and defaults to ``BOTH`` when omitted. ``chars``
+    defaults to whitespace when omitted. Each form is shorthand for one of the
+    functions above:
+
+    ============================= ================
+    ANSI syntax                   Equivalent to
+    ============================= ================
+    ``TRIM(BOTH FROM s)``         ``trim(s)``
+    ``TRIM(LEADING FROM s)``      ``ltrim(s)``
+    ``TRIM(TRAILING FROM s)``     ``rtrim(s)``
+    ``TRIM(BOTH c FROM s)``       ``trim(s, c)``
+    ``TRIM(LEADING c FROM s)``    ``ltrim(s, c)``
+    ``TRIM(TRAILING c FROM s)``   ``rtrim(s, c)``
+    ``TRIM(c FROM s)``            ``trim(s, c)``
+    ============================= ================
+
+    For example::
+
+        SELECT trim('!' FROM '!foo!'); -- foo
+        SELECT trim(LEADING FROM '  abcd'); -- abcd
+        SELECT trim(BOTH '$' FROM '$var$'); -- var
+        SELECT trim(TRAILING 'ER' FROM upper('worker')); -- WORK
+
+    ``TRIM``, ``BOTH``, ``LEADING``, and ``TRAILING`` are not reserved keywords and
+    may still be used as identifiers. As a consequence, in ``TRIM(leading FROM s)``
+    the word ``leading`` is read as the trim specification and not as a column named
+    ``leading``. Quote the identifier to get the column::
+
+        SELECT trim("leading" FROM s); -- equivalent to trim(s, "leading")
+
+    At least one of ``specification`` and ``chars`` must be present when ``FROM`` is
+    used, so ``TRIM(FROM s)`` is not valid. Note also that ``TRIM(c FROM s)`` names
+    the trim characters before the string, which is the opposite of the
+    ``trim(string, chars)`` argument order.
+
 .. function:: upper(string) -> varchar
 
     Converts ``string`` to uppercase.

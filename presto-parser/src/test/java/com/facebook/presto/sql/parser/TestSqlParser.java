@@ -2749,12 +2749,129 @@ public class TestSqlParser
                                 new DereferenceExpression(new Identifier("t"), new Identifier("current_role"))),
                         table(QualifiedName.of("t"))));
 
+        assertStatement("SELECT trim, both, leading, trailing FROM t",
+                simpleQuery(
+                        selectList(
+                                new Identifier("trim"),
+                                new Identifier("both"),
+                                new Identifier("leading"),
+                                new Identifier("trailing")),
+                        table(QualifiedName.of("t"))));
+
         assertExpression("stats", new Identifier("stats"));
         assertExpression("nfd", new Identifier("nfd"));
         assertExpression("nfc", new Identifier("nfc"));
         assertExpression("nfkd", new Identifier("nfkd"));
         assertExpression("nfkc", new Identifier("nfkc"));
         assertExpression("current_role", new Identifier("current_role"));
+        assertExpression("trim", new Identifier("trim"));
+        assertExpression("both", new Identifier("both"));
+        assertExpression("leading", new Identifier("leading"));
+        assertExpression("trailing", new Identifier("trailing"));
+    }
+
+    /**
+     * Guards the compatibility contract of the ANSI TRIM syntax: none of the keywords it
+     * introduces may become reserved, and none of the existing trim call forms may change
+     * the way they are parsed. See {@link #testTrim} for the new syntax itself.
+     */
+    @Test
+    public void testTrimKeywordsAreNotReserved()
+    {
+        // identifiers in the positions that a reserved TRIM would break
+        assertStatement("SELECT trim FROM trim",
+                simpleQuery(selectList(new Identifier("trim")), table(QualifiedName.of("trim"))));
+        assertStatement("SELECT x AS trim FROM t",
+                simpleQuery(
+                        selectList(new SingleColumn(new Identifier("x"), identifier("trim"))),
+                        table(QualifiedName.of("t"))));
+        assertStatement("SELECT t.trim FROM t",
+                simpleQuery(
+                        selectList(new DereferenceExpression(new Identifier("t"), identifier("trim"))),
+                        table(QualifiedName.of("t"))));
+        assertStatement("CREATE TABLE t (trim VARCHAR, both BIGINT, leading BIGINT, trailing BIGINT)",
+                new CreateTable(
+                        QualifiedName.of("t"),
+                        ImmutableList.of(
+                                new ColumnDefinition(identifier("trim"), "VARCHAR", true, emptyList(), Optional.empty()),
+                                new ColumnDefinition(identifier("both"), "BIGINT", true, emptyList(), Optional.empty()),
+                                new ColumnDefinition(identifier("leading"), "BIGINT", true, emptyList(), Optional.empty()),
+                                new ColumnDefinition(identifier("trailing"), "BIGINT", true, emptyList(), Optional.empty())),
+                        false,
+                        ImmutableList.of(),
+                        Optional.empty()));
+        assertStatement("SELECT * FROM t AS trim",
+                simpleQuery(selectList(new AllColumns()), aliased(table(QualifiedName.of("t")), "trim")));
+
+        // these only need to parse and round-trip through the formatter
+        assertRoundTrips("WITH trim AS (SELECT 1) SELECT * FROM trim");
+        assertRoundTrips("SELECT trim FROM t GROUP BY trim ORDER BY trim");
+        assertRoundTrips("CREATE VIEW trim AS SELECT trim FROM t");
+        assertRoundTrips("SELECT CAST(trim AS VARCHAR) FROM t");
+
+        // the existing call forms must keep parsing as ordinary function calls
+        assertExpression("trim(x)", new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("x"))));
+        assertExpression("trim(x, y)", new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("x"), new Identifier("y"))));
+        assertExpression("ltrim(x, y)", new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new Identifier("x"), new Identifier("y"))));
+        assertExpression("rtrim(x, y)", new FunctionCall(QualifiedName.of("rtrim"), ImmutableList.of(new Identifier("x"), new Identifier("y"))));
+        // a user-defined trim in a function namespace must still resolve through the normal path
+        assertExpression("cat.schem.trim(a, b, c)",
+                new FunctionCall(
+                        QualifiedName.of("cat", "schem", "trim"),
+                        ImmutableList.of(new Identifier("a"), new Identifier("b"), new Identifier("c"))));
+        // a column named trim used as the argument of trim()
+        assertExpression("trim(trim)", new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("trim"))));
+    }
+
+    @Test
+    public void testTrim()
+    {
+        // TRIM(specification FROM source)
+        assertExpression("trim(BOTH FROM x)", new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("x"))));
+        assertExpression("trim(LEADING FROM x)", new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new Identifier("x"))));
+        assertExpression("trim(TRAILING FROM x)", new FunctionCall(QualifiedName.of("rtrim"), ImmutableList.of(new Identifier("x"))));
+
+        // TRIM(specification character FROM source) - note the arguments are swapped
+        assertExpression("trim(BOTH '$' FROM x)",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("x"), new StringLiteral("$"))));
+        assertExpression("trim(LEADING '.' FROM x)",
+                new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new Identifier("x"), new StringLiteral("."))));
+        assertExpression("trim(TRAILING 'ER' FROM x)",
+                new FunctionCall(QualifiedName.of("rtrim"), ImmutableList.of(new Identifier("x"), new StringLiteral("ER"))));
+
+        // TRIM(character FROM source) - BOTH is the ANSI default
+        assertExpression("trim('!' FROM x)",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("x"), new StringLiteral("!"))));
+
+        // arbitrary expressions are allowed for both operands
+        assertExpression("trim(TRAILING 'ER' FROM upper('worker'))",
+                new FunctionCall(
+                        QualifiedName.of("rtrim"),
+                        ImmutableList.of(
+                                new FunctionCall(QualifiedName.of("upper"), ImmutableList.of(new StringLiteral("worker"))),
+                                new StringLiteral("ER"))));
+        assertExpression("trim(BOTH FROM trim(LEADING '.' FROM x))",
+                new FunctionCall(
+                        QualifiedName.of("trim"),
+                        ImmutableList.of(new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new Identifier("x"), new StringLiteral("."))))));
+
+        // a column named trim can still be the trim source
+        assertExpression("trim(LEADING FROM trim)", new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new Identifier("trim"))));
+
+        // LEADING/TRAILING/BOTH stay non-reserved, so the keyword reading wins when a column
+        // shares the name. Quoting is the escape hatch, as it is for any other non-reserved word.
+        assertExpression("trim(leading FROM x)", new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new Identifier("x"))));
+        assertExpression("trim(\"leading\" FROM x)",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("x"), new Identifier("leading", true))));
+
+        // negative cases: FROM and at least one of specification/character are required
+        assertInvalidExpression("trim(FROM x)", "mismatched input 'FROM'.*");
+        assertInvalidExpression("trim(BOTH x)", "mismatched input '\\)'.*'FROM'.*");
+        assertInvalidExpression("trim(BOTH '.' FROM)", "mismatched input '\\)'.*");
+
+        // without FROM there is nothing ANSI about the input, so it stays an ordinary function
+        // call - here over a column named "leading"
+        assertExpression("trim(LEADING)", new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new Identifier("LEADING"))));
     }
 
     @Test
@@ -3647,6 +3764,11 @@ public class TestSqlParser
     private static void assertExpression(String expression, Expression expected)
     {
         assertParsed(expression, expected, SQL_PARSER.createExpression(expression));
+    }
+
+    private static void assertRoundTrips(String query)
+    {
+        assertFormattedSql(SQL_PARSER, SQL_PARSER.createStatement(query, ParsingOptions.builder().build()));
     }
 
     private static void assertParsed(String input, Node expected, Node parsed)

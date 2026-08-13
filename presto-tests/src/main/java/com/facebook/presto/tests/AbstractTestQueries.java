@@ -223,6 +223,37 @@ public abstract class AbstractTestQueries
     }
 
     @Test
+    public void testAnsiTrimSyntax()
+    {
+        // The ANSI TRIM syntax is desugared into trim/ltrim/rtrim in the parser, so asserting the
+        // two spellings produce identical results confirms nothing downstream of the parser needs
+        // to know about it. Inherited by the native and Presto-on-Spark suites.
+        assertSameResults(
+                "SELECT TRIM(BOTH FROM name), TRIM(LEADING FROM name), TRIM(TRAILING FROM name) FROM nation",
+                "SELECT trim(name), ltrim(name), rtrim(name) FROM nation");
+        assertSameResults(
+                "SELECT TRIM(BOTH 'A' FROM name), TRIM(LEADING 'A' FROM name), TRIM(TRAILING 'A' FROM name) FROM nation",
+                "SELECT trim(name, 'A'), ltrim(name, 'A'), rtrim(name, 'A') FROM nation");
+        assertSameResults(
+                "SELECT TRIM('A' FROM name) FROM nation",
+                "SELECT trim(name, 'A') FROM nation");
+
+        // the new syntax is usable wherever an expression is
+        assertSameResults(
+                "SELECT TRIM(LEADING 'A' FROM name) FROM nation WHERE TRIM(TRAILING 'A' FROM name) <> name GROUP BY name ORDER BY TRIM(BOTH FROM name)",
+                "SELECT ltrim(name, 'A') FROM nation WHERE rtrim(name, 'A') <> name GROUP BY name ORDER BY trim(name)");
+
+        // trim is not a reserved word, so it remains usable as an identifier
+        assertSameResults("SELECT name AS trim FROM nation", "SELECT name FROM nation");
+        assertSameResults("SELECT trim FROM (SELECT name AS trim FROM nation)", "SELECT name FROM nation");
+    }
+
+    private void assertSameResults(String actualSql, String equivalentSql)
+    {
+        assertEquals(computeActual(actualSql), computeActual(equivalentSql));
+    }
+
+    @Test
     public void testSelectLargeInterval()
     {
         MaterializedResult result = computeActual("SELECT INTERVAL '30' DAY");

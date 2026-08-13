@@ -776,6 +776,55 @@ public class TestStringFunctions
     }
 
     @Test
+    public void testAnsiTrimSyntax()
+    {
+        // The ANSI syntax is desugared in the parser into the trim/ltrim/rtrim calls asserted
+        // above, so every case here must produce the same type and value as its equivalent.
+
+        // TRIM(specification FROM source)
+        assertFunction("TRIM(BOTH FROM '  hello  ')", createVarcharType(9), "hello");
+        assertFunction("TRIM(LEADING FROM '  hello  ')", createVarcharType(9), "hello  ");
+        assertFunction("TRIM(TRAILING FROM '  hello  ')", createVarcharType(9), "  hello");
+        assertFunction("TRIM(BOTH FROM '')", createVarcharType(0), "");
+        assertFunction("TRIM(LEADING FROM '   ')", createVarcharType(3), "");
+
+        // TRIM(specification chars FROM source)
+        assertFunction("TRIM(BOTH ' ' FROM '  hello  ')", createVarcharType(9), "hello");
+        assertFunction("TRIM(LEADING ' ' FROM '  hello  ')", createVarcharType(9), "hello  ");
+        assertFunction("TRIM(TRAILING ' ' FROM '  hello  ')", createVarcharType(9), "  hello");
+        assertFunction("TRIM(BOTH 'he ' FROM '  hello  ')", createVarcharType(9), "llo");
+        assertFunction("TRIM(BOTH '' FROM '  hello  ')", createVarcharType(9), "  hello  ");
+        assertFunction("TRIM(TRAILING 'ER' FROM UPPER('worker'))", createVarcharType(6), "WORK");
+
+        // TRIM(chars FROM source): BOTH is the default
+        assertFunction("TRIM('!' FROM '!foo!')", createVarcharType(5), "foo");
+        assertFunction("TRIM(' ' FROM ' hello world ')", createVarcharType(13), "hello world");
+        assertFunction("TRIM('.t' FROM '.t.e.s.t.')", createVarcharType(9), "e.s");
+
+        // char(x) arguments keep the char(x) behaviour of the underlying functions
+        assertFunction("TRIM(BOTH FROM CAST('  hello  ' AS CHAR(9)))", createCharType(9), padRight("hello", 9));
+        assertFunction("TRIM(LEADING FROM CAST('  hello  ' AS CHAR(9)))", createCharType(9), padRight("hello", 9));
+        assertFunction("TRIM(TRAILING FROM CAST('  hello  ' AS CHAR(9)))", createCharType(9), padRight("  hello", 9));
+        assertFunction("TRIM(BOTH ' ' FROM CAST('  hello  ' AS CHAR(9)))", createCharType(9), padRight("hello", 9));
+
+        // unbounded varchar
+        assertFunction("TRIM(BOTH FROM CAST('abc ' AS VARCHAR))", VARCHAR, "abc");
+        assertFunction("TRIM(LEADING ' ' FROM CAST(' abc' AS VARCHAR))", VARCHAR, "abc");
+
+        // non latin characters
+        assertFunction("TRIM(BOTH FROM ' \u4FE1\u5FF5 \u7231 \u5E0C\u671B ')", createVarcharType(9), "\u4FE1\u5FF5 \u7231 \u5E0C\u671B");
+        assertFunction("TRIM(LEADING '\u00f3\u017a' FROM '\u017a\u00f3\u0142\u0107')", createVarcharType(4), "\u0142\u0107");
+        assertFunction("TRIM(TRAILING '\u0107\u0142' FROM '\u017a\u00f3\u0142\u0107')", createVarcharType(4), "\u017a\u00f3");
+
+        // nulls propagate as they do through the function forms
+        assertFunction("TRIM(BOTH FROM CAST(NULL AS VARCHAR))", VARCHAR, null);
+        assertFunction("TRIM(LEADING CAST(NULL AS VARCHAR) FROM 'abc')", createVarcharType(3), null);
+
+        // nesting
+        assertFunction("TRIM(BOTH FROM TRIM(LEADING '.' FROM '..  hello  '))", createVarcharType(11), "hello");
+    }
+
+    @Test
     public void testLeftTrimParametrized()
     {
         assertFunction("LTRIM('', '')", createVarcharType(0), "");

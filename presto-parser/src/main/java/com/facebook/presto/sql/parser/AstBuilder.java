@@ -2137,6 +2137,45 @@ class AstBuilder
     }
 
     @Override
+    public Node visitTrim(SqlBaseParser.TrimContext context)
+    {
+        // The ANSI syntax is shorthand for the existing trim/ltrim/rtrim functions, so it is
+        // desugared here rather than represented by a dedicated AST node. Note that the ANSI
+        // form names the trim character before the source, while the functions take the source
+        // first.
+        ImmutableList.Builder<Expression> arguments = ImmutableList.builder();
+        arguments.add((Expression) visit(context.trimSource));
+        if (context.trimChar != null) {
+            arguments.add((Expression) visit(context.trimChar));
+        }
+
+        return new FunctionCall(
+                getLocation(context),
+                QualifiedName.of(trimFunctionName(context.trimsSpecification())),
+                arguments.build());
+    }
+
+    private static String trimFunctionName(SqlBaseParser.TrimsSpecificationContext specification)
+    {
+        if (specification == null) {
+            // TRIM(character FROM source): BOTH is the ANSI default when no specification is given
+            return "trim";
+        }
+
+        Token token = (Token) specification.getChild(0).getPayload();
+        switch (token.getType()) {
+            case SqlBaseLexer.BOTH:
+                return "trim";
+            case SqlBaseLexer.LEADING:
+                return "ltrim";
+            case SqlBaseLexer.TRAILING:
+                return "rtrim";
+            default:
+                throw new IllegalArgumentException("Unsupported trim specification: " + token.getText());
+        }
+    }
+
+    @Override
     public Node visitSubstring(SqlBaseParser.SubstringContext context)
     {
         return new FunctionCall(getLocation(context), QualifiedName.of("substr"), visit(context.valueExpression(), Expression.class));
