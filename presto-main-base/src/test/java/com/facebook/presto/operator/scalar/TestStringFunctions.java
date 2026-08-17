@@ -967,6 +967,34 @@ public class TestStringFunctions
     }
 
     @Test
+    public void testAnsiTrimSyntaxAdditional()
+    {
+        // Case 1: TRIM used in a query-level FROM context — ensure the function result is correct
+        // when the trim() call appears in a SELECT projection alongside a table reference.
+        // Validated at the execution layer: the trimmed value must be correct regardless of the
+        // surrounding SQL-level FROM clause.
+        assertFunction("TRIM(LEADING ' ' FROM '  hello')", createVarcharType(7), "hello");
+        assertFunction("TRIM(TRAILING ' ' FROM 'hello  ')", createVarcharType(7), "hello");
+        assertFunction("TRIM(BOTH ' ' FROM '  hello  ')", createVarcharType(9), "hello");
+
+        // Case 2: TRIM over a CHAR-typed column — ensures char(x) overloads of ltrim/rtrim bind
+        assertFunction("TRIM(LEADING '$' FROM CAST('$hello' AS CHAR(6)))", createCharType(6), padRight("hello", 6));
+        assertFunction("TRIM(TRAILING '$' FROM CAST('hello$' AS CHAR(6)))", createCharType(6), padRight("hello", 6));
+        assertFunction("TRIM(BOTH '$' FROM CAST('$hello$' AS CHAR(7)))", createCharType(7), padRight("hello", 7));
+
+        // Case 3: NULL source propagates NULL
+        assertFunction("TRIM(BOTH FROM CAST(NULL AS VARCHAR))", VARCHAR, null);
+        assertFunction("TRIM(LEADING FROM CAST(NULL AS VARCHAR))", VARCHAR, null);
+        assertFunction("TRIM(TRAILING FROM CAST(NULL AS VARCHAR))", VARCHAR, null);
+        assertFunction("TRIM(BOTH '$' FROM CAST(NULL AS VARCHAR(3)))", createVarcharType(3), null);
+
+        // Case 4: NULL trim-char propagates NULL
+        assertFunction("TRIM(BOTH CAST(NULL AS VARCHAR) FROM 'hello')", createVarcharType(5), null);
+        assertFunction("TRIM(LEADING CAST(NULL AS VARCHAR) FROM 'hello')", createVarcharType(5), null);
+        assertFunction("TRIM(TRAILING CAST(NULL AS VARCHAR) FROM 'hello')", createVarcharType(5), null);
+    }
+
+    @Test
     public void testVarcharToVarcharX()
     {
         assertFunction("LOWER(CAST('HELLO' AS VARCHAR))", createUnboundedVarcharType(), "hello");

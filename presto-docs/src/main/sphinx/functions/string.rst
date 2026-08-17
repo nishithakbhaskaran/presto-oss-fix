@@ -248,6 +248,58 @@ For plugin-loaded string functions, see :ref:`functions/plugin-loaded-functions:
     _       _                           U+3000  Ideographic Space
     ======  =========================== ======  ===========================
 
+    ``trim`` also accepts the ANSI SQL special syntax forms described below.  All
+    ANSI forms are rewritten by the parser into ordinary ``trim``, ``ltrim``, or
+    ``rtrim`` function calls and behave identically to those functions at runtime.
+
+    .. rubric:: ANSI SQL syntax
+
+    .. code-block:: sql
+
+        TRIM([{BOTH | LEADING | TRAILING} [chars] FROM] source)
+        TRIM([chars FROM] source)
+
+    ``source``
+        The string to trim.
+
+    ``chars`` (optional)
+        A string whose individual characters are removed from ``source``.
+        When omitted, whitespace is removed (same as calling ``trim(source)``).
+
+    ``BOTH | LEADING | TRAILING`` (optional)
+        Controls which end(s) of ``source`` are trimmed.
+
+        =========  =========================================
+        Specifier  Equivalent function
+        =========  =========================================
+        ``BOTH``   :func:`!trim` (default when omitted)
+        ``LEADING``  :func:`!ltrim`
+        ``TRAILING`` :func:`!rtrim`
+        =========  =========================================
+
+    The specifier keywords are case-insensitive (``both``, ``BOTH``, ``Both``
+    are all accepted).
+
+    Examples::
+
+        -- whitespace trim, both sides (no specifier, no chars)
+        SELECT trim(BOTH FROM '  hello  ');          -- 'hello'
+
+        -- custom character, leading only
+        SELECT trim(LEADING '$' FROM '$var$');        -- 'var$'
+
+        -- custom character, trailing only
+        SELECT trim(TRAILING '$' FROM '$var$');       -- '$var'
+
+        -- custom character, both sides (explicit specifier)
+        SELECT trim(BOTH '$' FROM '$var$');           -- 'var'
+
+        -- chars-only form (no specifier), equivalent to TRIM(BOTH ...)
+        SELECT trim('!' FROM '!foo!');                -- 'foo'
+
+        -- multi-character trim set
+        SELECT trim(TRAILING 'ER' FROM 'WORKER');     -- 'WORK'
+
 .. function:: trim(string, chars) -> varchar
     :noindex:
 
