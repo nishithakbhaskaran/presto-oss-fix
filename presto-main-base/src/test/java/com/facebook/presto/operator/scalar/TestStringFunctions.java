@@ -935,6 +935,38 @@ public class TestStringFunctions
     }
 
     @Test
+    public void testAnsiTrimSyntax()
+    {
+        // TRIM(BOTH FROM src) — whitespace trim from both sides
+        assertFunction("TRIM(BOTH FROM '  hello  ')", createVarcharType(9), "hello");
+        assertFunction("TRIM(LEADING FROM '  hello  ')", createVarcharType(9), "hello  ");
+        assertFunction("TRIM(TRAILING FROM '  hello  ')", createVarcharType(9), "  hello");
+
+        // TRIM(BOTH 'x' FROM src) — custom character trim
+        assertFunction("TRIM(BOTH '$' FROM '$var$')", createVarcharType(5), "var");
+        assertFunction("TRIM(LEADING '$' FROM '$var$')", createVarcharType(5), "var$");
+        assertFunction("TRIM(TRAILING '$' FROM '$var$')", createVarcharType(5), "$var");
+
+        // TRIM('x' FROM src) — char-only form, no specifier (defaults to BOTH)
+        assertFunction("TRIM('!' FROM '!foo!')", createVarcharType(5), "foo");
+        assertFunction("TRIM(' ' FROM '  abcd  ')", createVarcharType(8), "abcd");
+
+        // Case-insensitive specifier keywords
+        assertFunction("TRIM(both '$' FROM '$var$')", createVarcharType(5), "var");
+        assertFunction("TRIM(leading '$' FROM '$var$')", createVarcharType(5), "var$");
+        assertFunction("TRIM(trailing '$' FROM '$var$')", createVarcharType(5), "$var");
+
+        // TRIM(TRAILING 'ER' FROM src) — multi-character trim set
+        assertFunction("TRIM(TRAILING 'ER' FROM 'WORKER')", createVarcharType(6), "WORK");
+
+        // Backward-compatible plain function call forms still work
+        assertFunction("TRIM('  hello  ')", createVarcharType(9), "hello");
+        assertFunction("TRIM('  hello  ', ' ')", createVarcharType(9), "hello");
+        assertFunction("LTRIM('  hello  ')", createVarcharType(9), "hello  ");
+        assertFunction("RTRIM('  hello  ')", createVarcharType(9), "  hello");
+    }
+
+    @Test
     public void testVarcharToVarcharX()
     {
         assertFunction("LOWER(CAST('HELLO' AS VARCHAR))", createUnboundedVarcharType(), "hello");

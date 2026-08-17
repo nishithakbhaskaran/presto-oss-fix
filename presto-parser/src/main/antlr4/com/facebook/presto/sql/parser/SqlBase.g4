@@ -450,6 +450,9 @@ primaryExpression
     | SUBSTRING '(' valueExpression FROM valueExpression (FOR valueExpression)? ')'       #substring
     | NORMALIZE '(' valueExpression (',' normalForm)? ')'                                 #normalize
     | EXTRACT '(' identifier FROM valueExpression ')'                                     #extract
+    | identifier '(' trimSpecification=identifier (trimChar=valueExpression)? FROM
+        trimSource=valueExpression ')'                                                    #trimFunction
+    | identifier '(' trimChar=valueExpression FROM trimSource=valueExpression ')'         #trimFunction
     | '(' expression ')'                                                                  #parenthesizedExpression
     | GROUPING '(' (qualifiedName (',' qualifiedName)*)? ')'                              #groupingOperation
     ;

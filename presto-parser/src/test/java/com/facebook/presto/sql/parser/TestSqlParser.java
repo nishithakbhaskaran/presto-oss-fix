@@ -257,6 +257,47 @@ public class TestSqlParser
     }
 
     @Test
+    public void testTrimFunction()
+    {
+        // ANSI SQL TRIM with specifier only (no trim char) — maps to trim/ltrim/rtrim with 1 arg
+        assertExpression("trim(BOTH FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new StringLiteral(" abc "))));
+        assertExpression("trim(LEADING FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new StringLiteral(" abc "))));
+        assertExpression("trim(TRAILING FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("rtrim"), ImmutableList.of(new StringLiteral(" abc "))));
+
+        // ANSI SQL TRIM with specifier + trim character — maps to trim/ltrim/rtrim with 2 args
+        assertExpression("trim(BOTH ' ' FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new StringLiteral(" abc "), new StringLiteral(" "))));
+        assertExpression("trim(LEADING ' ' FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new StringLiteral(" abc "), new StringLiteral(" "))));
+        assertExpression("trim(TRAILING ' ' FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("rtrim"), ImmutableList.of(new StringLiteral(" abc "), new StringLiteral(" "))));
+
+        // ANSI SQL TRIM with trim char but no specifier — maps to trim with 2 args (BOTH is default)
+        assertExpression("trim('!' FROM '!foo!')",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new StringLiteral("!foo!"), new StringLiteral("!"))));
+
+        // Case-insensitive specifier keywords
+        assertExpression("trim(both FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new StringLiteral(" abc "))));
+        assertExpression("trim(leading FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("ltrim"), ImmutableList.of(new StringLiteral(" abc "))));
+        assertExpression("trim(trailing FROM ' abc ')",
+                new FunctionCall(QualifiedName.of("rtrim"), ImmutableList.of(new StringLiteral(" abc "))));
+
+        // TRIM as identifier (backward compatibility) — must still work as a regular function call
+        assertExpression("trim(' abc ')",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new StringLiteral(" abc "))));
+        assertExpression("trim(' abc ', ' ')",
+                new FunctionCall(QualifiedName.of("trim"), ImmutableList.of(new StringLiteral(" abc "), new StringLiteral(" "))));
+
+        // Invalid specifier should throw a parse error
+        assertInvalidExpression("trim(INVALID FROM ' abc ')", "Invalid trim specification.*");
+    }
+
+    @Test
     public void testPossibleExponentialBacktracking()
     {
         SQL_PARSER.createExpression("(((((((((((((((((((((((((((true)))))))))))))))))))))))))))");

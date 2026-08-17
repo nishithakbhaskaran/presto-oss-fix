@@ -218,6 +218,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -2147,6 +2148,52 @@ class AstBuilder
             throw parseError("Invalid EXTRACT field: " + fieldString, context);
         }
         return new Extract(getLocation(context), (Expression) visit(context.valueExpression()), field);
+    }
+
+    @Override
+    public Node visitTrimFunction(SqlBaseParser.TrimFunctionContext context)
+    {
+        // The grammar fires #trimFunction for any  identifier '(' ... FROM ... ')' form.
+        // We validate here that the leading identifier is really "trim" (case-insensitive)
+        // and that the optional specifier is one of BOTH / LEADING / TRAILING.
+        String functionName = context.identifier(0).getText().toLowerCase(Locale.ENGLISH);
+        if (!functionName.equals("trim")) {
+            throw parseError("Unexpected use of FROM inside function '" + context.identifier(0).getText() + "'", context);
+        }
+
+        Expression trimSource = (Expression) visit(context.trimSource);
+        Optional<Expression> trimChar = visitIfPresent(context.trimChar, Expression.class);
+
+        // Determine the scalar function name based on the optional specifier (BOTH/LEADING/TRAILING).
+        // When no specifier is present the context.trimSpecification is null; default to BOTH → "trim".
+        String scalarFunction;
+        if (context.trimSpecification != null) {
+            String spec = context.trimSpecification.getText().toUpperCase(Locale.ENGLISH);
+            switch (spec) {
+                case "LEADING":
+                    scalarFunction = "ltrim";
+                    break;
+                case "TRAILING":
+                    scalarFunction = "rtrim";
+                    break;
+                case "BOTH":
+                    scalarFunction = "trim";
+                    break;
+                default:
+                    throw parseError("Invalid trim specification '" + context.trimSpecification.getText() +
+                            "'. Expected LEADING, TRAILING, or BOTH", context);
+            }
+        }
+        else {
+            // No specifier: identifier '(' valueExpression FROM valueExpression ')' — ANSI char-only form.
+            // TRIM('x' FROM src) is equivalent to TRIM(BOTH 'x' FROM src).
+            scalarFunction = "trim";
+        }
+
+        ImmutableList.Builder<Expression> args = ImmutableList.builder();
+        args.add(trimSource);
+        trimChar.ifPresent(args::add);
+        return new FunctionCall(getLocation(context), QualifiedName.of(scalarFunction), args.build());
     }
 
     @Override
